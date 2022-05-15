@@ -1,20 +1,34 @@
 .colourElement {
     position: absolute;
-    pointer-events: none;
+    /*pointer-events: none;*/
     /*box-sizing: border-box; */
 }
 
 
-.colourElementOrigin  {
+.colourElementOrigin {
     position: absolute;
     user-select: none;
+    border: 1px solid transparent
 }
+
 .colourElementOrigin:hover {
-    border: 1px dashed black
+    border: 1px dashed black;
+    /*z-index: 1000;*/
 }
+.colourElementOrigin:hover > div {
+    /*z-index: 1000;*/
+}
+
 .colourElementOrigin .colourElementControls {
     visibility: hidden;
+
+    max-height: 300px;
+    overflow-y: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
+
 .colourElementOrigin:hover .colourElementControls {
     visibility: visible;
 }

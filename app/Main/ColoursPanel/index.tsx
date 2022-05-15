@@ -16,8 +16,9 @@ export function getRandomColor() {
     }
     return color;
 }
-export function getRandomSize(from , to) {
-    return from  + Math.floor(Math.random() * to);
+
+export function getRandomSize(from, to) {
+    return from + Math.floor(Math.random() * to);
 }
 
 export const defaultElementState = {
@@ -32,6 +33,20 @@ export const defaultElementState = {
     borderRadius: 0,
     zIndex: 0,
     blendMode: 'normal',
+    text: '',
+    font: '',
+    fontStyle: '',
+    fontSize: 50,
+    fontWeight: '',
+    textColour: 'black',
+    textPosition: [0, 0] as [number, number],
+    shadowXYOffset: [0, 0] as [number, number],
+    shadowSpread: 0,
+    shadowBlur: 0,
+    shadowColor: 'black',
+    textShadowXYOffset: [0, 0] as [number, number],
+    textShadowBlur: 0,
+    textShadowColor: 'black',
 };
 
 export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {

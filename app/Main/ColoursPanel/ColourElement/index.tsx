@@ -20,6 +20,21 @@ export interface ColourElementState {
     borderColor: string
     zIndex: number
     blendMode?: string
+    text: string
+    textPosition: [number, number]
+    fontSize: number
+    font: string
+    fontStyle: string
+    fontWeight: string
+    textColour: string
+    shadowXYOffset: [number, number]
+    shadowSpread: number
+    shadowBlur: number
+    shadowColor: string
+    textShadowXYOffset: [number, number]
+    textShadowBlur: number
+    textShadowColor: string
+
 }
 
 export interface ColourElementProps {
@@ -34,6 +49,270 @@ const stopPropagation = (e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
 };
 
+export enum ParameterTypes {
+    TextInput = 'TextInput',
+    NumberInput = 'NumberInput',
+    XYDrag = 'XYDrag',
+    XYDragPointerLock = 'XYDragPointerLock',
+    XDrag = 'XDrag',
+    YDrag = 'yDrag',
+    XDragPointerLock = 'XDragPointerLock',
+    YDragPointerLock = 'YDragPointerLock',
+    SelectArray = 'SelectArray'
+}
+
+const parameterComponentsByType = {
+    [ParameterTypes.TextInput]: ({name, value, onChange, props}) => {
+        const handleChange = React.useCallback((value) => {
+            onChange(name, value)
+        }, [onChange]);
+        return (
+            <BlurEnterTextInput
+                changeOnEnter
+                resetOnBlur
+                value={value}
+                onChange={handleChange}
+                title={props.placeholder}
+                {...props}
+            />
+        );
+    },
+    [ParameterTypes.NumberInput]: ({name, value, onChange, props}) => {
+        const handleChange = React.useCallback((value) => {
+            onChange(name, value)
+        }, [onChange]);
+        return (
+            <BlurEnterNumberInput
+                changeOnEnter
+                resetOnBlur
+                value={value || undefined}
+                onChange={handleChange}
+                title={props.placeholder}
+                {...props}
+            />
+        );
+    },
+    [ParameterTypes.XYDrag]: ({value, onChange, name, props}) => {
+        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
+            onChange(name, [savedValue[0] + x, savedValue[1] + y])
+        }, [onChange]);
+        return (
+            <DivDragHandler<[number, number]>
+                saveValue={value}
+                onDrag={handleChange}
+                className={`${styles.colourElementControlHandler} ${styles.colourElementControlHandlerPosition}`}
+            >{props?.text || name} {value[0]},{value[1]}</DivDragHandler>
+        );
+    },
+    [ParameterTypes.XYDragPointerLock]: ({value, onChange, name, props}) => {
+        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
+            onChange(name, [savedValue[0] + x, savedValue[1] + y])
+        }, [onChange]);
+        return (
+            <DivDragWithPointerLock<[number, number]>
+                saveValue={value}
+                onDrag={handleChange}
+                className={`${styles.colourElementControlHandler} ${styles.colourElementControlHandlerPosition}`}
+            >{props?.text || name} {value[0]},{value[1]}</DivDragWithPointerLock>
+        );
+    },
+    [ParameterTypes.XDrag]: ({value, onChange, name, props}) => {
+
+        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
+            onChange(name, Math.max(0, savedValue + x));
+        }, [onChange]);
+
+        return (
+            <DivDragHandler<number>
+                saveValue={value}
+                onDrag={handleChange}
+                className={styles.colourElementControlHandler}
+            >{props?.text || name} {value}</DivDragHandler>
+        );
+    },
+    [ParameterTypes.YDrag]: ({value, onChange, name, props}) => {
+
+        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
+            onChange(name, Math.max(0, savedValue - y));
+        }, [onChange]);
+
+        return (
+            <DivDragHandler<number>
+                saveValue={value}
+                onDrag={handleChange}
+                className={styles.colourElementControlHandler}
+            >{props?.text || name} {value}</DivDragHandler>
+        );
+    },
+    [ParameterTypes.XDragPointerLock]: ({value, onChange, name, props}) => {
+
+        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
+            onChange(name, Math.max(0, savedValue + x));
+        }, [onChange]);
+
+        return (
+            <DivDragWithPointerLock<number>
+                saveValue={value}
+                onDrag={handleChange}
+                className={styles.colourElementControlHandler}
+            >{props?.text || name} {value}</DivDragWithPointerLock>
+        );
+    },
+    [ParameterTypes.YDragPointerLock]: ({value, onChange, name, props}) => {
+
+        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
+            onChange(name, Math.max(0, savedValue - y));
+        }, [onChange]);
+
+        return (
+            <DivDragWithPointerLock<number>
+                saveValue={value}
+                onDrag={handleChange}
+                className={styles.colourElementControlHandler}
+            >{props?.text || name} {value}</DivDragWithPointerLock>
+        );
+    },
+    [ParameterTypes.SelectArray]: ({value, onChange, name, props}) => {
+
+        const handleChange = React.useCallback((e) => {
+            onChange(name, e.target.value);
+        }, [onChange]);
+
+        return (
+            <select
+                value={value}
+                onChange={handleChange}
+                title={props.title}
+            >
+                {props.options.map(option => {
+                    return <option value={option}>{option}</option>
+                })}
+            </select>
+        );
+    },
+}
+
+export interface ParameterConfig {
+    name: string
+    type: ParameterTypes
+    props?: any
+    visibility?: (state: ColourElementState) => boolean
+}
+
+const parametersConfig: ParameterConfig[] = [
+    {
+        name: 'colour',
+        type: ParameterTypes.TextInput,
+        props: {placeholder: 'colour'},
+    }, {
+        name: 'position',
+        type: ParameterTypes.XYDrag,
+    }, {
+        name: 'width',
+        type: ParameterTypes.YDragPointerLock,
+    }, {
+        name: 'height',
+        type: ParameterTypes.YDragPointerLock,
+    }, {
+        name: 'angle',
+        type: ParameterTypes.YDragPointerLock,
+    }, {
+        name: 'borderWidth',
+        type: ParameterTypes.YDragPointerLock,
+        props: {text: 'border width'},
+    }, {
+        name: 'borderRadius',
+        type: ParameterTypes.YDragPointerLock,
+        props: {text: 'border radius'},
+    }, {
+        name: 'borderStyle',
+        type: ParameterTypes.SelectArray,
+        props: {
+            options: ['solid', 'dashed', 'dotted', 'double', 'hidden'],
+            title: 'border style'
+        }
+    }, {
+        name: 'borderColor',
+        type: ParameterTypes.TextInput,
+        props: {placeholder: 'border colour'},
+    }, {
+        name: 'zIndex',
+        type: ParameterTypes.NumberInput,
+        props: {placeholder: 'z-index'},
+    }, {
+        name: 'blendMode',
+        type: ParameterTypes.SelectArray,
+        props: {
+            options: [
+                'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
+                'color-dodge', 'color-burn', 'hard-light', 'soft-light', 'difference',
+                'exclusion', 'hue', 'saturation', 'color', 'luminosity',
+            ],
+            title: 'blend mode'
+        }
+    }, {
+        name: 'text',
+        type: ParameterTypes.TextInput,
+        props: {placeholder: 'text'},
+    }, {
+        name: 'fontSize',
+        type: ParameterTypes.YDragPointerLock,
+        props: {text: 'font size'},
+        visibility: ({text}) => !!text,
+    }, {
+        name: 'textPosition',
+        type: ParameterTypes.XYDragPointerLock,
+        props: {text: 'text position'},
+        visibility: ({text}) => !!text,
+    }, {
+        name: 'font',
+        type: ParameterTypes.TextInput,
+        props: {placeholder: 'font family'},
+        visibility: ({text}) => !!text,
+    }, {
+        name: 'fontStyle',
+        type: ParameterTypes.TextInput,
+        props: {placeholder: 'font style'},
+        visibility: ({text}) => !!text,
+    }, {
+        name: 'fontWeight',
+        type: ParameterTypes.TextInput,
+        props: {placeholder: 'font weight'},
+        visibility: ({text}) => !!text,
+    }, {
+        name: 'textShadowXYOffset',
+        type: ParameterTypes.XYDragPointerLock,
+        props: {text: 'text shadow offset'},
+        visibility: ({text}) => !!text,
+    }, {
+        name: 'textShadowBlur',
+        type: ParameterTypes.YDragPointerLock,
+        props: {text: 'text shadow blur'},
+        visibility: ({text}) => !!text,
+    }, {
+        name: 'textShadowColor',
+        type: ParameterTypes.TextInput,
+        props: {placeholder: 'text shadow color'},
+        visibility: ({text}) => !!text,
+    }, {
+        name: 'shadowXYOffset',
+        type: ParameterTypes.XYDragPointerLock,
+        props: {text: 'shadow offset'},
+    }, {
+        name: 'shadowSpread',
+        type: ParameterTypes.YDragPointerLock,
+        props: {text: 'shadow spread'},
+    }, {
+        name: 'shadowBlur',
+        type: ParameterTypes.YDragPointerLock,
+        props: {text: 'shadow blur'},
+    }, {
+        name: 'shadowColor',
+        type: ParameterTypes.TextInput,
+        props: {placeholder: 'shadow color'},
+    },
+];
+
 export const ColourElement: React.FC<ColourElementProps> = ((props) => {
 
     const {
@@ -45,29 +324,41 @@ export const ColourElement: React.FC<ColourElementProps> = ((props) => {
 
     const containerRef = useRef<HTMLDivElement>(null);
 
-
-    const style = useMemo<CSSProperties>(() => ({
-        background: state.colour,
-        width: state.width,
-        height: state.height,
-        left: state.position[0],
-        top: state.position[1],
-        transform: `rotate(${state.angle}grad)`,
-        borderWidth: state.borderWidth,
-        borderRadius: state.borderRadius,
-        borderColor: state.borderColor,
-        borderStyle: state.borderStyle,
-        zIndex: state.zIndex,
-        mixBlendMode: state.blendMode
-    } as CSSProperties), [state]);
-
     const originStyle = useMemo(() => ({
         width: state.width + state.borderWidth * 2,
         height: state.height + state.borderWidth * 2,
         left: state.position[0],
         top: state.position[1],
         zIndex: state.zIndex,
-    }), [state.width, state.height, state.position, state.borderWidth, state.zIndex]);
+        mixBlendMode: state.blendMode,
+    } as CSSProperties), [state]);
+
+    const style = useMemo<CSSProperties>(() => ({
+        background: state.colour,
+        width: state.width,
+        height: state.height,
+        left: 0,
+        top: 0,
+        transform: `rotate(${state.angle}grad)`,
+        borderWidth: state.borderWidth,
+        borderRadius: state.borderRadius,
+        borderColor: state.borderColor,
+        borderStyle: state.borderStyle,
+        boxShadow: `${state.shadowXYOffset[0]}px ${state.shadowXYOffset[1]}px ${state.shadowBlur}px ${state.shadowSpread}px ${state.shadowColor}`
+    } as CSSProperties), [state]);
+
+    const textStyle = useMemo<CSSProperties>(() => ({
+        fontSize: state.fontSize,
+        fontFamily: state.font,
+        fontStyle: state.fontStyle,
+        fontWeight: state.fontWeight,
+        color: state.textColour,
+        position: 'absolute',
+        left: state.textPosition[0],
+        top: state.textPosition[1],
+        textShadow: `${state.textShadowXYOffset[0]}px ${state.textShadowXYOffset[1]}px ${state.textShadowBlur}px ${state.textShadowColor}`
+    } as CSSProperties), [state]);
+
 
     const handleParameterChange = React.useCallback((paramName: string, value: any) => {
         onChange(index, {
@@ -76,153 +367,43 @@ export const ColourElement: React.FC<ColourElementProps> = ((props) => {
         });
     }, [onChange, state, index])
 
-    const handleChangeColour = React.useCallback((value) => {
-        handleParameterChange('colour', value);
-    }, [handleParameterChange]);
-
-    const handlePositionChange = React.useCallback(({x, y}, e, savedValue) => {
-        console.log(state);
-        // handleParameterChange('width', Math.max(0, savedValue[1] + y));
-        // handleParameterChange('angle', savedValue[1] - y);
-        handleParameterChange('position', [savedValue[0] + x, savedValue[1] + y])
-    }, [handleParameterChange]);
-
-    const handleWidthChange = React.useCallback(({x, y}, e, savedValue) => {
-        console.log(state);
-        handleParameterChange('width', Math.max(0, savedValue - y));
-    }, [handleParameterChange]);
-
-    const handleHeightChange = React.useCallback(({x, y}, e, savedValue) => {
-
-        console.log(state);
-        handleParameterChange('height', Math.max(0, savedValue - y));
-    }, [handleParameterChange]);
-
-    const handleAngleChange = React.useCallback(({x, y}, e, savedValue) => {
-        handleParameterChange('angle', savedValue - y);
-    }, [handleParameterChange]);
-
-    const handleRadiusChange = React.useCallback(({x, y}, e, savedValue) => {
-        handleParameterChange('borderRadius', Math.max(0, savedValue - y));
-    }, [handleParameterChange]);
-
-    const handleBorderWidthChange = React.useCallback(({x, y}, e, savedValue) => {
-        handleParameterChange('borderWidth', Math.max(0, savedValue - y));
-    }, [handleParameterChange]);
-
-    const handleBorderStyleChange = React.useCallback((e) => {
-        handleParameterChange('borderStyle', e.target.value);
-    }, [handleParameterChange]);
-
-    const handleBorderColorChange = React.useCallback((value) => {
-        handleParameterChange('borderColor', value);
-    }, [handleParameterChange])
-    const handleZIndexChange = React.useCallback((value) => {
-        handleParameterChange('zIndex', value);
-    }, [handleParameterChange])
-    const handleBlendModeChange = React.useCallback((e) => {
-        handleParameterChange('blendMode', e.target.value);
-    }, [handleParameterChange])
-
     const handleRemove = React.useCallback((e) => {
         onRemove(index);
     }, [onRemove, index])
 
     return (
         <>
-            <div
-                ref={containerRef}
-                className={styles.colourElement}
-                style={style}
-                onClick={stopPropagation}
-            />
+
             <div
                 className={styles.colourElementOrigin}
                 style={originStyle}
                 onClick={stopPropagation}
             >
+                <div
+                    ref={containerRef}
+                    className={styles.colourElement}
+                    style={style}
+                    onClick={stopPropagation}
+                >
+                    <div style={textStyle}>{state.text}</div>
+                </div>
                 <div className={styles.colourElementControls}>
-                    <BlurEnterTextInput
-                        changeOnEnter
-                        resetOnBlur
-                        value={state.colour}
-                        onChange={handleChangeColour}
-                    />
-                    <DivDragHandler<[number, number]>
-                        saveValue={state.position}
-                        onDrag={handlePositionChange}
-                        className={`${styles.colourElementControlHandler} ${styles.colourElementControlHandlerPosition}`}
-                    >position {state.position[0]},{state.position[1]}</DivDragHandler>
-                    <DivDragWithPointerLock<number>
-                        saveValue={state.width}
-                        onDrag={handleWidthChange}
-                        className={styles.colourElementControlHandler}
-                    >width {state.width}</DivDragWithPointerLock>
-                    <DivDragWithPointerLock<number>
-                        saveValue={state.height}
-                        onDrag={handleHeightChange}
-                        className={styles.colourElementControlHandler}
-                    >height {state.height}</DivDragWithPointerLock>
-                    <DivDragWithPointerLock<number>
-                        saveValue={state.angle}
-                        onDrag={handleAngleChange}
-                        className={styles.colourElementControlHandler}
-                    >angle {state.angle}</DivDragWithPointerLock>
-                    <DivDragWithPointerLock<number>
-                        saveValue={state.borderWidth}
-                        onDrag={handleBorderWidthChange}
-                        className={styles.colourElementControlHandler}
-                    >border {state.borderWidth}</DivDragWithPointerLock>
-                    <DivDragWithPointerLock<number>
-                        saveValue={state.borderRadius}
-                        onDrag={handleRadiusChange}
-                        className={styles.colourElementControlHandler}
-                    >radius {state.borderRadius}</DivDragWithPointerLock>
-                    <select
-                        value={state.borderStyle}
-                        onChange={handleBorderStyleChange}
-                    >
-                        <option value={'solid'}>solid</option>
-                        <option value={'dashed'}>dashed</option>
-                        <option value={'dotted'}>dotted</option>
-                        <option value={'double'}>double</option>
-                        <option value={'hidden'}>hidden</option>
-                    </select>
-                    <BlurEnterTextInput
-                        changeOnEnter
-                        resetOnBlur
-                        value={state.borderColor}
-                        onChange={handleBorderColorChange}
-                    />
-                    <BlurEnterNumberInput
-                        changeOnEnter
-                        resetOnBlur
-                        value={state.zIndex || undefined}
-                        onChange={handleZIndexChange}
-                        placeholder={'z-index'}
-                    />
-                    <select
-                        value={state.blendMode}
-                        onChange={handleBlendModeChange}
-                    >
-                        <option value={'normal'}>normal</option>
-                        <option value={'multiply'}>multiply</option>
-                        <option value={'screen'}>screen</option>
-                        <option value={'overlay'}>overlay</option>
-                        <option value={'darken'}>darken</option>
-                        <option value={'lighten'}>lighten</option>
-                        <option value={'color-dodge'}>color-dodge</option>
-                        <option value={'color-burn'}>color-burn</option>
-                        <option value={'hard-light'}>hard-light</option>
-                        <option value={'soft-light'}>soft-light</option>
-                        <option value={'difference'}>difference</option>
-                        <option value={'exclusion'}>exclusion</option>
-                        <option value={'hue'}>hue</option>
-                        <option value={'saturation'}>saturation</option>
-                        <option value={'color'}>color</option>
-                        <option value={'luminosity'}>luminosity</option>
-                    </select>
-                    <button onClick={handleRemove}>remove</button>
+                    {parametersConfig.map(({type, name, props, visibility}) => {
+                        const Component = parameterComponentsByType[type];
+                        const isVisible = !visibility || visibility(state);
+
+                        return isVisible && (
+                            <Component
+                                key={name}
+                                value={state[name]}
+                                props={props}
+                                name={name}
+                                onChange={handleParameterChange}
+                            />
+                        )
+                    })}
+
+                    <button onClick={handleRemove}>delete</button>
                 </div>
             </div>
         </>

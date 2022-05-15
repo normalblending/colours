@@ -1,12 +1,11 @@
 import * as React from "react";
-import {forwardRef, useMemo, useRef, useState, MouseEvent, useEffect, CSSProperties} from "react";
-import styles from './ColourElement.css';
+import {useMemo, useRef, MouseEvent, CSSProperties} from "react";
+import styles from './styles.css';
 import {
     BlurEnterNumberInput,
     BlurEnterTextInput,
     DivDragHandler,
     DivDragWithPointerLock,
-    Button
 } from "bbuutoonnss";
 
 export interface ColourElementState {
@@ -153,32 +152,32 @@ export const ColourElement: React.FC<ColourElementProps> = ((props) => {
                         saveValue={state.position}
                         onDrag={handlePositionChange}
                         className={`${styles.colourElementControlHandler} ${styles.colourElementControlHandlerPosition}`}
-                    >position{state.position[0]},{state.position[1]}</DivDragHandler>
+                    >position {state.position[0]},{state.position[1]}</DivDragHandler>
                     <DivDragWithPointerLock<number>
                         saveValue={state.width}
                         onDrag={handleWidthChange}
                         className={styles.colourElementControlHandler}
-                    >width{state.width}</DivDragWithPointerLock>
+                    >width {state.width}</DivDragWithPointerLock>
                     <DivDragWithPointerLock<number>
                         saveValue={state.height}
                         onDrag={handleHeightChange}
                         className={styles.colourElementControlHandler}
-                    >height{state.height}</DivDragWithPointerLock>
+                    >height {state.height}</DivDragWithPointerLock>
                     <DivDragWithPointerLock<number>
                         saveValue={state.angle}
                         onDrag={handleAngleChange}
                         className={styles.colourElementControlHandler}
-                    >angle{state.angle}</DivDragWithPointerLock>
+                    >angle {state.angle}</DivDragWithPointerLock>
                     <DivDragWithPointerLock<number>
                         saveValue={state.borderWidth}
                         onDrag={handleBorderWidthChange}
                         className={styles.colourElementControlHandler}
-                    >border{state.borderWidth}</DivDragWithPointerLock>
+                    >border {state.borderWidth}</DivDragWithPointerLock>
                     <DivDragWithPointerLock<number>
                         saveValue={state.borderRadius}
                         onDrag={handleRadiusChange}
                         className={styles.colourElementControlHandler}
-                    >radius{state.borderRadius}</DivDragWithPointerLock>
+                    >radius {state.borderRadius}</DivDragWithPointerLock>
                     <select
                         value={state.borderStyle}
                         onChange={handleBorderStyleChange}

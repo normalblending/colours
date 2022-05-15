@@ -29,6 +29,11 @@
     color: navajowhite;
 }
 
+.colourElementControlHandler {
+    white-space: nowrap;
+}
+
 .colourElementControlHandlerPosition {
     cursor: pointer;
+    white-space: nowrap;
 }

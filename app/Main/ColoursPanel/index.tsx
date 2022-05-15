@@ -1,7 +1,7 @@
 import * as React from "react";
 import {ColourElement, ColourElementState} from "./ColourElement";
 import {useCallback, useMemo, useRef, useState} from "react";
-import styles from './ColoursPanel.css';
+import styles from './styles.css';
 
 export interface ColoursPanelProps {
     width: number
@@ -9,13 +9,15 @@ export interface ColoursPanelProps {
 }
 
 export function getRandomColor() {
-    // return "black";
     const letters = '0123456789ABCDEF';
     let color = '#';
     for (let i = 0; i < 6; i++) {
         color += letters[Math.floor(Math.random() * 16)];
     }
     return color;
+}
+export function getRandomSize(from , to) {
+    return from  + Math.floor(Math.random() * to);
 }
 
 export const defaultElementState = {
@@ -68,6 +70,9 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
             ...defaultElementState,
             position: [e.clientX - rect.left, e.clientY - rect.top],
             colour: getRandomColor(),
+            borderColor: getRandomColor(),
+            width: getRandomSize(97, 222),
+            height: getRandomSize(130, 244),
         }]);
     }, [elements]);
 

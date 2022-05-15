@@ -1,6 +1,7 @@
 import * as React from "react";
 import {ColourElement, ColourElementState} from "./ColourElement";
 import {useCallback, useMemo, useRef, useState} from "react";
+import {KeyboardJSTrigger, useIsActive, DropFile, readImageFile} from "bbuutoonnss";
 import styles from './styles.css';
 
 export interface ColoursPanelProps {
@@ -49,11 +50,44 @@ export const defaultElementState = {
     textShadowColor: 'black',
 };
 
+const quadNumberFormat =
+    (arr: string) =>
+        (string, offset) => string
+            .split(((0 + offset) % 4).toString()).join(arr[0])
+            .split(((1 + offset) % 4).toString()).join(arr[1])
+            .split(((2 + offset) % 4).toString()).join(arr[2])
+            .split(((3 + offset) % 4).toString()).join(arr[3]);
+
+export const dateZs = () => {
+
+    const date = new Date();
+
+    let f: string = 'colr';
+
+
+    return quadNumberFormat(f)(date.getTime().toString(4), 0);
+
+};
+
+export const saveJson = (obj) => {
+    var dataURL = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj));
+
+    var link = document.createElement("a");
+    document.body.appendChild(link); // Firefox requires the link to be in the body :(
+    link.href = dataURL;
+    link.download = `${dateZs()}.json`;
+    link.click();
+    document.body.removeChild(link);
+};
+
 export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
 
     const {width, height} = props;
 
     const style = useMemo(() => ({width, height}), [width, height]);
+
+    const [isBlendActive, {handleActivate: blendActivate, handleDeactivate: blendDeactivate}] = useIsActive(true);
+    const [isAddActive, {handleActivate: addActivate, handleDeactivate: addDeactivate}] = useIsActive(false);
 
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -91,27 +125,131 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
         }]);
     }, [elements]);
 
+
+    const handleCopyState = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(elements))
+
+        } catch (error) {
+            console.error(error)
+        }
+    }, [elements]);
+
+    const handleSave = useCallback(async () => {
+        try {
+
+            saveJson(elements);
+        } catch (error) {
+            console.error(error)
+        }
+    }, [elements]);
+    const handleClear = useCallback(async () => {
+        setElements([]);
+    }, [setElements]);
+
+    const handlePasteState = useCallback(async () => {
+        const text = await navigator.clipboard.readText();
+        try {
+            const elements = JSON.parse(text);
+
+            if (Array.isArray(elements))
+                setElements(elements);
+        } catch (error) {
+            console.error(error)
+        }
+    }, []);
+
+    React.useEffect(() => {
+
+        document.addEventListener('paste', handlePasteState);
+        return () => {
+            document.removeEventListener('paste', handlePasteState);
+        };
+    }, [handlePasteState]);
+
+    React.useEffect(() => {
+        document.addEventListener('copy', handleCopyState);
+        return () => {
+            document.removeEventListener('copy', handleCopyState);
+        };
+    }, [handleCopyState]);
+
+
+    const handleDropFiles = useCallback(async (files) => {
+        var f = files[0];
+
+        if (!f.type.match('application/json')) {
+            alert('Not a JSON file!');
+        }
+
+        var reader = new FileReader();
+
+        reader.onload = (function (theFile) {
+            return function (e) {
+                try {
+                    const newElements = JSON.parse(e.target.result);
+                    setElements(isAddActive ? [...elements, ...newElements] : newElements);
+                } catch (error) {
+
+                }
+            };
+        })(f);
+
+        reader.readAsText(f);
+
+    }, [elements, isAddActive]);
+
+    const handleInfo = useCallback(() => {
+        alert(
+            '[ i ] - info\n' +
+            '[ b ] - mute blending\n' +
+            '[ s ] - save to file\n' +
+            'drop file - overwrite\n' +
+            '[ a ] + drop file - append\n' +
+            '[ backspace ] - clear\n' +
+            '[ copy ] - copy\n' +
+            '[ paste ] - append'
+        );
+    }, []);
+
     return (
-        <div
-            ref={containerRef}
-            className={styles.coloursPanel}
-            style={style}
-            onDoubleClick={handleAddNewElement}
-        >
-            {!elements.length && (
-                <div>double click to add colour</div>
-            )}
-            {elements.map((elementState, index) => {
-                return (
-                    <ColourElement
-                        key={index}
-                        index={index}
-                        state={elementState}
-                        onRemove={handleRemove}
-                        onChange={handleChange}
-                    />
-                )
-            })}
-        </div>
+        <DropFile onDrop={handleDropFiles}>
+            <div
+                ref={containerRef}
+                className={styles.coloursPanel}
+                style={style}
+                onDoubleClick={handleAddNewElement}
+            >
+                <KeyboardJSTrigger codeValue={'a'} onPress={addActivate} onRelease={addDeactivate}/>
+                <KeyboardJSTrigger codeValue={'b'} onPress={blendDeactivate} onRelease={blendActivate}/>
+                <KeyboardJSTrigger codeValue={'s'} onPress={handleSave}/>
+                <KeyboardJSTrigger keyValue={'Backspace'} onPress={handleClear}/>
+                <KeyboardJSTrigger codeValue={'i'} onPress={handleInfo}/>
+                {!elements.length && (
+                    <>
+                        <div>double click to add colour</div>
+                        <div>[ copy ] - copy</div>
+                        <div>[ paste ] - append</div>
+                        <div>[ b ] - mute blending</div>
+                        <div>[ s ] - save to file</div>
+                        <div>drop file - overwrite</div>
+                        <div>[ a ] + drop file - append</div>
+                        <div>[ backspace ] - clear</div>
+                    </>
+                )}
+                {elements.map((elementState, index) => {
+                    return (
+                        <ColourElement
+                            isBlendActive={isBlendActive}
+                            key={index}
+                            index={index}
+                            state={elementState}
+                            onRemove={handleRemove}
+                            onChange={handleChange}
+                        />
+                    )
+                })}
+            </div>
+        </DropFile>
     );
 };

@@ -42,6 +42,7 @@ export interface ColourElementProps {
     state: ColourElementState
     onRemove: (index: number) => void
     onChange: (index: number, state: ColourElementState) => void
+    isBlendActive: boolean
 }
 
 
@@ -185,7 +186,7 @@ const parameterComponentsByType = {
                 title={props.title}
             >
                 {props.options.map(option => {
-                    return <option value={option}>{option}</option>
+                    return <option key={option} value={option}>{option}</option>
                 })}
             </select>
         );
@@ -320,6 +321,7 @@ export const ColourElement: React.FC<ColourElementProps> = ((props) => {
         onChange,
         state,
         index,
+        isBlendActive,
     } = props;
 
     const containerRef = useRef<HTMLDivElement>(null);
@@ -330,8 +332,8 @@ export const ColourElement: React.FC<ColourElementProps> = ((props) => {
         left: state.position[0],
         top: state.position[1],
         zIndex: state.zIndex,
-        mixBlendMode: state.blendMode,
-    } as CSSProperties), [state]);
+        mixBlendMode: isBlendActive ? state.blendMode : 'normal',
+    } as CSSProperties), [state, isBlendActive]);
 
     const style = useMemo<CSSProperties>(() => ({
         background: state.colour,

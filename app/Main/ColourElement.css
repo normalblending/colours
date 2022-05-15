@@ -1,0 +1,34 @@
+.colourElement {
+    position: absolute;
+    pointer-events: none;
+    /*box-sizing: border-box; */
+}
+
+
+.colourElementOrigin  {
+    position: absolute;
+    user-select: none;
+}
+.colourElementOrigin:hover {
+    border: 1px dashed black
+}
+.colourElementOrigin .colourElementControls {
+    visibility: hidden;
+}
+.colourElementOrigin:hover .colourElementControls {
+    visibility: visible;
+}
+
+.colourElementOrigin .colourElementControls .sizeHandler {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+.colourElementControlHandler:hover, .colourElementControlHandler.divDragHandlerIsActive {
+    color: navajowhite;
+}
+
+.colourElementControlHandlerPosition {
+    cursor: pointer;
+}

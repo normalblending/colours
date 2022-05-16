@@ -1,41 +1,11 @@
 import * as React from "react";
-import {useMemo, useRef, MouseEvent, CSSProperties} from "react";
+import {MouseEvent, useMemo} from "react";
 import styles from './styles.css';
-import {
-    BlurEnterNumberInput,
-    BlurEnterTextInput,
-    DivDragHandler,
-    DivDragWithPointerLock,
-} from "bbuutoonnss";
-
-export interface ColourElementState {
-    position: [number, number]
-    colour: string
-    width: number
-    height: number
-    angle: number
-    borderWidth: number
-    borderRadius: number
-    borderStyle: string
-    borderColor: string
-    zIndex: number
-    blendMode?: string
-    text: string
-    textPosition: [number, number]
-    fontSize: number
-    font: string
-    fontStyle: string
-    fontWeight: string
-    textColour: string
-    shadowXYOffset: [number, number]
-    shadowSpread: number
-    shadowBlur: number
-    shadowColor: string
-    textShadowXYOffset: [number, number]
-    textShadowBlur: number
-    textShadowColor: string
-
-}
+import {ColourElementState} from "./types";
+import {DivDragHandler} from "bbuutoonnss";
+import {ParameterComponent} from "./InputComponent";
+import {parametersConfig} from "./configureParameters";
+import {getStyles} from "./configureStyles";
 
 export interface ColourElementProps {
     index: number
@@ -43,276 +13,11 @@ export interface ColourElementProps {
     onRemove: (index: number) => void
     onChange: (index: number, state: ColourElementState) => void
     isBlendActive: boolean
+    onToBack: (index: number) => void
+    onToFront: (index: number) => void
 }
 
-
-const stopPropagation = (e: MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-};
-
-export enum ParameterTypes {
-    TextInput = 'TextInput',
-    NumberInput = 'NumberInput',
-    XYDrag = 'XYDrag',
-    XYDragPointerLock = 'XYDragPointerLock',
-    XDrag = 'XDrag',
-    YDrag = 'yDrag',
-    XDragPointerLock = 'XDragPointerLock',
-    YDragPointerLock = 'YDragPointerLock',
-    SelectArray = 'SelectArray'
-}
-
-const parameterComponentsByType = {
-    [ParameterTypes.TextInput]: ({name, value, onChange, props}) => {
-        const handleChange = React.useCallback((value) => {
-            onChange(name, value)
-        }, [onChange]);
-        return (
-            <BlurEnterTextInput
-                changeOnEnter
-                resetOnBlur
-                value={value}
-                onChange={handleChange}
-                title={props.placeholder}
-                {...props}
-            />
-        );
-    },
-    [ParameterTypes.NumberInput]: ({name, value, onChange, props}) => {
-        const handleChange = React.useCallback((value) => {
-            onChange(name, value)
-        }, [onChange]);
-        return (
-            <BlurEnterNumberInput
-                changeOnEnter
-                resetOnBlur
-                value={value || undefined}
-                onChange={handleChange}
-                title={props.placeholder}
-                {...props}
-            />
-        );
-    },
-    [ParameterTypes.XYDrag]: ({value, onChange, name, props}) => {
-        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
-            onChange(name, [savedValue[0] + x, savedValue[1] + y])
-        }, [onChange]);
-        return (
-            <DivDragHandler<[number, number]>
-                saveValue={value}
-                onDrag={handleChange}
-                className={`${styles.colourElementControlHandler} ${styles.colourElementControlHandlerPosition}`}
-            >{props?.text || name} {value[0]},{value[1]}</DivDragHandler>
-        );
-    },
-    [ParameterTypes.XYDragPointerLock]: ({value, onChange, name, props}) => {
-        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
-            onChange(name, [savedValue[0] + x, savedValue[1] + y])
-        }, [onChange]);
-        return (
-            <DivDragWithPointerLock<[number, number]>
-                saveValue={value}
-                onDrag={handleChange}
-                className={`${styles.colourElementControlHandler} ${styles.colourElementControlHandlerPosition}`}
-            >{props?.text || name} {value[0]},{value[1]}</DivDragWithPointerLock>
-        );
-    },
-    [ParameterTypes.XDrag]: ({value, onChange, name, props}) => {
-
-        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
-            onChange(name, Math.max(0, savedValue + x));
-        }, [onChange]);
-
-        return (
-            <DivDragHandler<number>
-                saveValue={value}
-                onDrag={handleChange}
-                className={styles.colourElementControlHandler}
-            >{props?.text || name} {value}</DivDragHandler>
-        );
-    },
-    [ParameterTypes.YDrag]: ({value, onChange, name, props}) => {
-
-        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
-            onChange(name, Math.max(0, savedValue - y));
-        }, [onChange]);
-
-        return (
-            <DivDragHandler<number>
-                saveValue={value}
-                onDrag={handleChange}
-                className={styles.colourElementControlHandler}
-            >{props?.text || name} {value}</DivDragHandler>
-        );
-    },
-    [ParameterTypes.XDragPointerLock]: ({value, onChange, name, props}) => {
-
-        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
-            onChange(name, Math.max(0, savedValue + x));
-        }, [onChange]);
-
-        return (
-            <DivDragWithPointerLock<number>
-                saveValue={value}
-                onDrag={handleChange}
-                className={styles.colourElementControlHandler}
-            >{props?.text || name} {value}</DivDragWithPointerLock>
-        );
-    },
-    [ParameterTypes.YDragPointerLock]: ({value, onChange, name, props}) => {
-
-        const handleChange = React.useCallback(({x, y}, e, savedValue) => {
-            onChange(name, Math.max(0, savedValue - y));
-        }, [onChange]);
-
-        return (
-            <DivDragWithPointerLock<number>
-                saveValue={value}
-                onDrag={handleChange}
-                className={styles.colourElementControlHandler}
-            >{props?.text || name} {value}</DivDragWithPointerLock>
-        );
-    },
-    [ParameterTypes.SelectArray]: ({value, onChange, name, props}) => {
-
-        const handleChange = React.useCallback((e) => {
-            onChange(name, e.target.value);
-        }, [onChange]);
-
-        return (
-            <select
-                value={value}
-                onChange={handleChange}
-                title={props.title}
-            >
-                {props.options.map(option => {
-                    return <option key={option} value={option}>{option}</option>
-                })}
-            </select>
-        );
-    },
-}
-
-export interface ParameterConfig {
-    name: string
-    type: ParameterTypes
-    props?: any
-    visibility?: (state: ColourElementState) => boolean
-}
-
-const parametersConfig: ParameterConfig[] = [
-    {
-        name: 'colour',
-        type: ParameterTypes.TextInput,
-        props: {placeholder: 'colour'},
-    }, {
-        name: 'position',
-        type: ParameterTypes.XYDrag,
-    }, {
-        name: 'width',
-        type: ParameterTypes.YDragPointerLock,
-    }, {
-        name: 'height',
-        type: ParameterTypes.YDragPointerLock,
-    }, {
-        name: 'angle',
-        type: ParameterTypes.YDragPointerLock,
-    }, {
-        name: 'borderWidth',
-        type: ParameterTypes.YDragPointerLock,
-        props: {text: 'border width'},
-    }, {
-        name: 'borderRadius',
-        type: ParameterTypes.YDragPointerLock,
-        props: {text: 'border radius'},
-    }, {
-        name: 'borderStyle',
-        type: ParameterTypes.SelectArray,
-        props: {
-            options: ['solid', 'dashed', 'dotted', 'double', 'hidden'],
-            title: 'border style'
-        }
-    }, {
-        name: 'borderColor',
-        type: ParameterTypes.TextInput,
-        props: {placeholder: 'border colour'},
-    }, {
-        name: 'zIndex',
-        type: ParameterTypes.NumberInput,
-        props: {placeholder: 'z-index'},
-    }, {
-        name: 'blendMode',
-        type: ParameterTypes.SelectArray,
-        props: {
-            options: [
-                'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
-                'color-dodge', 'color-burn', 'hard-light', 'soft-light', 'difference',
-                'exclusion', 'hue', 'saturation', 'color', 'luminosity',
-            ],
-            title: 'blend mode'
-        }
-    }, {
-        name: 'text',
-        type: ParameterTypes.TextInput,
-        props: {placeholder: 'text'},
-    }, {
-        name: 'fontSize',
-        type: ParameterTypes.YDragPointerLock,
-        props: {text: 'font size'},
-        visibility: ({text}) => !!text,
-    }, {
-        name: 'textPosition',
-        type: ParameterTypes.XYDragPointerLock,
-        props: {text: 'text position'},
-        visibility: ({text}) => !!text,
-    }, {
-        name: 'font',
-        type: ParameterTypes.TextInput,
-        props: {placeholder: 'font family'},
-        visibility: ({text}) => !!text,
-    }, {
-        name: 'fontStyle',
-        type: ParameterTypes.TextInput,
-        props: {placeholder: 'font style'},
-        visibility: ({text}) => !!text,
-    }, {
-        name: 'fontWeight',
-        type: ParameterTypes.TextInput,
-        props: {placeholder: 'font weight'},
-        visibility: ({text}) => !!text,
-    }, {
-        name: 'textShadowXYOffset',
-        type: ParameterTypes.XYDragPointerLock,
-        props: {text: 'text shadow offset'},
-        visibility: ({text}) => !!text,
-    }, {
-        name: 'textShadowBlur',
-        type: ParameterTypes.YDragPointerLock,
-        props: {text: 'text shadow blur'},
-        visibility: ({text}) => !!text,
-    }, {
-        name: 'textShadowColor',
-        type: ParameterTypes.TextInput,
-        props: {placeholder: 'text shadow color'},
-        visibility: ({text}) => !!text,
-    }, {
-        name: 'shadowXYOffset',
-        type: ParameterTypes.XYDragPointerLock,
-        props: {text: 'shadow offset'},
-    }, {
-        name: 'shadowSpread',
-        type: ParameterTypes.YDragPointerLock,
-        props: {text: 'shadow spread'},
-    }, {
-        name: 'shadowBlur',
-        type: ParameterTypes.YDragPointerLock,
-        props: {text: 'shadow blur'},
-    }, {
-        name: 'shadowColor',
-        type: ParameterTypes.TextInput,
-        props: {placeholder: 'shadow color'},
-    },
-];
+const stopPropagation = (e: MouseEvent<HTMLDivElement>) => e.stopPropagation();
 
 export const ColourElement: React.FC<ColourElementProps> = ((props) => {
 
@@ -322,44 +27,13 @@ export const ColourElement: React.FC<ColourElementProps> = ((props) => {
         state,
         index,
         isBlendActive,
+        onToFront,
+        onToBack
     } = props;
 
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    const originStyle = useMemo(() => ({
-        width: state.width + state.borderWidth * 2,
-        height: state.height + state.borderWidth * 2,
-        left: state.position[0],
-        top: state.position[1],
-        zIndex: state.zIndex,
-        mixBlendMode: isBlendActive ? state.blendMode : 'normal',
-    } as CSSProperties), [state, isBlendActive]);
-
-    const style = useMemo<CSSProperties>(() => ({
-        background: state.colour,
-        width: state.width,
-        height: state.height,
-        left: 0,
-        top: 0,
-        transform: `rotate(${state.angle}grad)`,
-        borderWidth: state.borderWidth,
-        borderRadius: state.borderRadius,
-        borderColor: state.borderColor,
-        borderStyle: state.borderStyle,
-        boxShadow: `${state.shadowXYOffset[0]}px ${state.shadowXYOffset[1]}px ${state.shadowBlur}px ${state.shadowSpread}px ${state.shadowColor}`
-    } as CSSProperties), [state]);
-
-    const textStyle = useMemo<CSSProperties>(() => ({
-        fontSize: state.fontSize,
-        fontFamily: state.font,
-        fontStyle: state.fontStyle,
-        fontWeight: state.fontWeight,
-        color: state.textColour,
-        position: 'absolute',
-        left: state.textPosition[0],
-        top: state.textPosition[1],
-        textShadow: `${state.textShadowXYOffset[0]}px ${state.textShadowXYOffset[1]}px ${state.textShadowBlur}px ${state.textShadowColor}`
-    } as CSSProperties), [state]);
+    const elementStyles = useMemo(() => {
+        return getStyles(state, isBlendActive)
+    }, [state, isBlendActive]);
 
 
     const handleParameterChange = React.useCallback((paramName: string, value: any) => {
@@ -369,45 +43,61 @@ export const ColourElement: React.FC<ColourElementProps> = ((props) => {
         });
     }, [onChange, state, index])
 
+    const handlePositionChange = React.useCallback(({x, y}, e, savedValue) => {
+        handleParameterChange('position', [savedValue[0] + x, savedValue[1] + y])
+    }, [handleParameterChange])
+
     const handleRemove = React.useCallback((e) => {
         onRemove(index);
     }, [onRemove, index])
 
+    const handleToBack = React.useCallback(() => {
+        onToBack(index);
+    }, [onToBack, index])
+
+    const handleToFront = React.useCallback(() => {
+        onToFront(index);
+    }, [onToFront])
+
     return (
         <>
-
             <div
                 className={styles.colourElementOrigin}
-                style={originStyle}
+                style={elementStyles.origin}
                 onClick={stopPropagation}
             >
-                <div
-                    ref={containerRef}
-                    className={styles.colourElement}
-                    style={style}
+                <DivDragHandler<[number, number]>
+                    className={`${styles.colourElement} ${styles.positionBigHandler}`}
+                    style={elementStyles.main}
                     onClick={stopPropagation}
+                    saveValue={state.position}
+                    onDrag={handlePositionChange}
                 >
-                    <div style={textStyle}>{state.text}</div>
-                </div>
+                    <div style={elementStyles.text}>
+                        {state.text}
+                    </div>
+                </DivDragHandler>
                 <div className={styles.colourElementControls}>
-                    {parametersConfig.map(({type, name, props, visibility}) => {
-                        const Component = parameterComponentsByType[type];
-                        const isVisible = !visibility || visibility(state);
-
-                        return isVisible && (
-                            <Component
-                                key={name}
-                                value={state[name]}
-                                props={props}
+                    {parametersConfig.map(({name, type, props, propsByState, visibility}) => {
+                        return (
+                            <ParameterComponent
                                 name={name}
+                                type={type}
+                                visibility={visibility}
+                                state={state}
+                                props={props}
+                                propsByState={propsByState}
                                 onChange={handleParameterChange}
                             />
                         )
                     })}
 
+                    <button onClick={handleToFront}>up</button>
+                    <button onClick={handleToBack}>down</button>
                     <button onClick={handleRemove}>delete</button>
                 </div>
             </div>
         </>
     );
 });
+export {defaultElementState} from "./defaultState";

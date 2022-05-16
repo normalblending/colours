@@ -13,8 +13,10 @@ export const Main: React.FC<MainProps> = (props) => {
     const resizeHandler = React.useCallback((e) => {
         setSize([window.innerWidth, window.innerHeight]);
     }, []);
+
     useEffect(() => {
         setSize([window.innerWidth, window.innerHeight]);
+
         window.addEventListener('resize', resizeHandler);
         return () => {
             window.removeEventListener('resize', resizeHandler);

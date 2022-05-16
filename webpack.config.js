@@ -11,7 +11,8 @@ module.exports = env => ({
         symlinks: true,
         alias: {
             "react": resolve('./node_modules/react')
-        }
+        },
+        fallback: { "crypto": require.resolve("crypto-browserify") }
     },
     output: {
         filename: 'main.js',

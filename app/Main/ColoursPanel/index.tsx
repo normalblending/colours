@@ -1,84 +1,18 @@
 import * as React from "react";
-import {ColourElement, ColourElementState} from "./ColourElement";
 import {useCallback, useMemo, useRef, useState} from "react";
-import {KeyboardJSTrigger, useIsActive, DropFile, readImageFile} from "bbuutoonnss";
+import {ColourElement, defaultElementState} from "./ColourElement";
+import {DropFile, KeyboardJSTrigger, useBoolean, quadNumberFormat, saveJson, getRandomColor} from "bbuutoonnss";
 import styles from './styles.css';
+import {ColourElementState} from "./ColourElement/types";
 
 export interface ColoursPanelProps {
     width: number
     height: number
 }
 
-export function getRandomColor() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-}
+export const getRandomSize = (from, to) => from + Math.floor(Math.random() * to);
 
-export function getRandomSize(from, to) {
-    return from + Math.floor(Math.random() * to);
-}
-
-export const defaultElementState = {
-    colour: 'blue',
-    position: [100, 100],
-    width: 100,
-    height: 100,
-    angle: 0,
-    borderWidth: 0,
-    borderStyle: 'solid',
-    borderColor: 'black',
-    borderRadius: 0,
-    zIndex: 0,
-    blendMode: 'normal',
-    text: '',
-    font: '',
-    fontStyle: '',
-    fontSize: 50,
-    fontWeight: '',
-    textColour: 'black',
-    textPosition: [0, 0] as [number, number],
-    shadowXYOffset: [0, 0] as [number, number],
-    shadowSpread: 0,
-    shadowBlur: 0,
-    shadowColor: 'black',
-    textShadowXYOffset: [0, 0] as [number, number],
-    textShadowBlur: 0,
-    textShadowColor: 'black',
-};
-
-const quadNumberFormat =
-    (arr: string) =>
-        (string, offset) => string
-            .split(((0 + offset) % 4).toString()).join(arr[0])
-            .split(((1 + offset) % 4).toString()).join(arr[1])
-            .split(((2 + offset) % 4).toString()).join(arr[2])
-            .split(((3 + offset) % 4).toString()).join(arr[3]);
-
-export const dateZs = () => {
-
-    const date = new Date();
-
-    let f: string = 'colr';
-
-
-    return quadNumberFormat(f)(date.getTime().toString(4), 0);
-
-};
-
-export const saveJson = (obj) => {
-    var dataURL = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj));
-
-    var link = document.createElement("a");
-    document.body.appendChild(link); // Firefox requires the link to be in the body :(
-    link.href = dataURL;
-    link.download = `${dateZs()}.json`;
-    link.click();
-    document.body.removeChild(link);
-};
+export const filename = () => quadNumberFormat('colr')((new Date()).getTime().toString(4), 0);
 
 export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
 
@@ -86,8 +20,8 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
 
     const style = useMemo(() => ({width, height}), [width, height]);
 
-    const [isBlendActive, {handleActivate: blendActivate, handleDeactivate: blendDeactivate}] = useIsActive(true);
-    const [isAddActive, {handleActivate: addActivate, handleDeactivate: addDeactivate}] = useIsActive(false);
+    const [isBlendActive, blendActivate, blendDeactivate] = useBoolean(true);
+    const [isAddActive, addActivate, addDeactivate] = useBoolean(false);
 
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -104,7 +38,6 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
         setElements(elements => {
             const newElements = [...elements];
             newElements[index] = state;
-            // console.log(elements[index], state)
             return newElements
         });
     }, [elements]);
@@ -129,7 +62,6 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
     const handleCopyState = useCallback(async () => {
         try {
             await navigator.clipboard.writeText(JSON.stringify(elements))
-
         } catch (error) {
             console.error(error)
         }
@@ -137,8 +69,7 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
 
     const handleSave = useCallback(async () => {
         try {
-
-            saveJson(elements);
+            saveJson(filename(), elements);
         } catch (error) {
             console.error(error)
         }
@@ -150,17 +81,17 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
     const handlePasteState = useCallback(async () => {
         const text = await navigator.clipboard.readText();
         try {
-            const elements = JSON.parse(text);
+            const newElements = JSON.parse(text);
 
-            if (Array.isArray(elements))
-                setElements(elements);
+            if (Array.isArray(elements)) {
+                setElements([...elements, ...newElements]);
+            }
         } catch (error) {
             console.error(error)
         }
-    }, []);
+    }, [elements]);
 
     React.useEffect(() => {
-
         document.addEventListener('paste', handlePasteState);
         return () => {
             document.removeEventListener('paste', handlePasteState);
@@ -174,15 +105,14 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
         };
     }, [handleCopyState]);
 
-
     const handleDropFiles = useCallback(async (files) => {
-        var f = files[0];
+        const f = files[0];
 
         if (!f.type.match('application/json')) {
             alert('Not a JSON file!');
         }
 
-        var reader = new FileReader();
+        const reader = new FileReader();
 
         reader.onload = (function (theFile) {
             return function (e) {
@@ -201,16 +131,35 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
 
     const handleInfo = useCallback(() => {
         alert(
-            '[ i ] - info\n' +
-            '[ b ] - mute blending\n' +
-            '[ s ] - save to file\n' +
-            'drop file - overwrite\n' +
-            '[ a ] + drop file - append\n' +
-            '[ backspace ] - clear\n' +
-            '[ copy ] - copy\n' +
-            '[ paste ] - append'
+            ''
         );
     }, []);
+
+    const handleToBack = useCallback((index) => {
+        if (index > 0) {
+
+            setElements(elements => {
+                const newElements = [...elements];
+                const temp = newElements[index - 1];
+                newElements[index - 1] = newElements[index];
+                newElements[index] = temp;
+                return newElements;
+            })
+        }
+    }, []);
+
+    const handleToFront = useCallback((index) => {
+        if (index < elements.length - 1) {
+
+            setElements(elements => {
+                const newElements = [...elements];
+                const temp = newElements[index + 1];
+                newElements[index + 1] = newElements[index];
+                newElements[index] = temp;
+                return newElements;
+            })
+        }
+    }, [elements]);
 
     return (
         <DropFile onDrop={handleDropFiles}>
@@ -224,9 +173,9 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
                 <KeyboardJSTrigger codeValue={'b'} onPress={blendDeactivate} onRelease={blendActivate}/>
                 <KeyboardJSTrigger codeValue={'s'} onPress={handleSave}/>
                 <KeyboardJSTrigger keyValue={'Backspace'} onPress={handleClear}/>
-                <KeyboardJSTrigger codeValue={'i'} onPress={handleInfo}/>
+                {/*<KeyboardJSTrigger codeValue={'i'} onPress={handleInfo}/>*/}
                 {!elements.length && (
-                    <>
+                    <div className={styles.noEvents}>
                         <div>double click to add colour</div>
                         <div>[ copy ] - copy</div>
                         <div>[ paste ] - append</div>
@@ -235,7 +184,7 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
                         <div>drop file - overwrite</div>
                         <div>[ a ] + drop file - append</div>
                         <div>[ backspace ] - clear</div>
-                    </>
+                    </div>
                 )}
                 {elements.map((elementState, index) => {
                     return (
@@ -246,6 +195,8 @@ export const ColoursPanel: React.FC<ColoursPanelProps> = (props) => {
                             state={elementState}
                             onRemove={handleRemove}
                             onChange={handleChange}
+                            onToBack={handleToBack}
+                            onToFront={handleToFront}
                         />
                     )
                 })}

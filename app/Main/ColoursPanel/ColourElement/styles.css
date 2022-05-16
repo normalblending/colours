@@ -1,7 +1,5 @@
 .colourElement {
     position: absolute;
-    /*pointer-events: none;*/
-    /*box-sizing: border-box; */
 }
 
 
@@ -9,6 +7,10 @@
     position: absolute;
     user-select: none;
     border: 1px solid transparent
+}
+
+.positionBigHandler {
+    cursor: move;
 }
 
 .colourElementOrigin:hover {
@@ -22,6 +24,8 @@
 .colourElementOrigin .colourElementControls {
     visibility: hidden;
 
+
+    cursor: default;
     max-height: 300px;
     overflow-y: auto;
     position: absolute;
